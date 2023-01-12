@@ -6,4 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rusb = "0.9"
+hidapi = {version = "2.1.1", features = ["linux-static-libusb"], default-features = false}
+# rusb = "0.9"

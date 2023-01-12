@@ -3,40 +3,31 @@
 
 // https://wiki.osdev.org/USB_Human_Interface_Devices#USB_mouse
 
+use hidapi; 
 fn main() {
-    let trinket = get_tinky().expect("wuh oh device not found");
 
-    let handle = trinket.open().expect("couldnt get handle");
+    let api = hidapi::HidApi::new().unwrap();
 
-    let mut buffer: [u8; 4] = [0; 4];
-
-    // handle
-    //     .read_control(
-    //         rusb::request_type(rusb::Direction::In, rusb::RequestType::Class, rusb::Recipient::Interface),
-    //         rusb::RequestType,
-    //         ,
-    //         ,
-    //         &mut buffer,
-    //         std::time::Duration::new(1, 0),
-    //         );
-    let data = handle.read_interrupt(0, &mut buffer, std::time::Duration::new(1,0)).unwrap();
-    println!("{}", data);
-    for byte in buffer {
-        print!("{}", byte);
-    }
-    println!();
-}
-
-fn get_tinky() -> Option<rusb::Device<rusb::GlobalContext>> {
-    for device in rusb::devices().unwrap().iter() {
-        let device_desc = device.device_descriptor().unwrap();
-
-        if (device_desc.vendor_id(), device_desc.product_id()) == (0x258au16, 0x0036u16) {
-            println!("found device!");
-
-            return Some(device);
-        };
+    // Print out information about all connected devices
+    for device in api.device_list() {
+        println!("{:#?}", device);
     }
 
-    None
+    let mouse = (0x046du16, 0xc018u16);
+    let (VID, PID) = mouse;
+
+    // Connect to device using its VID and PID
+    let device = api.open(VID, PID).unwrap();
+
+    // Read data from device
+    let mut buf = [0u8; 8];
+    loop {
+        let res = device.read(&mut buf[..]).unwrap();
+        println!("Read: {:?}", &buf[..res]);
+    }
+
+    // Write data to device
+    // let buf = [0u8, 1, 2, 3, 4];
+    // let res = device.write(&buf).unwrap();
+    // println!("Wrote: {:?} byte(s)", res);
 }
