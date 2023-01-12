@@ -13,17 +13,27 @@ fn main() {
         println!("{:#?}", device);
     }
 
-    let mouse = (0x046du16, 0xc018u16);
-    let (VID, PID) = mouse;
+    // left mouse connection
+    let kt_mouse = (0x093au16, 0x2510u16);
+    let (vid, pid) = kt_mouse;
+    let left = api.open(vid, pid).unwrap();
 
-    // Connect to device using its VID and PID
-    let device = api.open(VID, PID).unwrap();
+    // right mouse connection
+    let hp_mouse = (0x046du16, 0xc018u16);
+    let (vid, pid) = hp_mouse;
+    let right = api.open(vid, pid).unwrap();
 
     // Read data from device
-    let mut buf = [0u8; 8];
     loop {
-        let res = device.read(&mut buf[..]).unwrap();
-        println!("Read: {:?}", &buf[..res]);
+        let mut buf = [0u8; 4];
+        let res = left.read_timeout(&mut buf[..], 1).unwrap();
+        let (left_x_change, left_y_change): (i8, i8) = (*buf.get(1).unwrap() as i8, *buf.get(2).unwrap() as i8);
+
+        let mut buf = [0u8; 4];
+        let res = right.read_timeout(&mut buf[..], 1).unwrap();
+        let (right_x_change, right_y_change): (i8, i8) = (*buf.get(1).unwrap() as i8, *buf.get(2).unwrap() as i8);
+        
+        println!("ldx: {}, ldy: {}\nrdx: {}, rdy: {}", left_x_change, left_y_change, right_x_change, right_y_change);
     }
 
     // Write data to device
