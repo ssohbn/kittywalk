@@ -10,12 +10,13 @@ use hidapi;
 //const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
 //const MODEL_O: (u16, u16) = (0x258Au16,0x0036u16);
 const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
+const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16);
 
 fn main() {
     let api = hidapi::HidApi::new().unwrap();
 
     // left mouse connection
-    let (vid, pid) = HP_MOUSE;
+    let (vid, pid) = TOMAS;
     let left = api.open(vid, pid).unwrap();
 
     // right mouse connection
