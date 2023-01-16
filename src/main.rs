@@ -4,23 +4,30 @@ use std::thread;
 
 // this is all my mouseys >(._.)<
 
-//const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
+const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
 //const MODEL_O: (u16, u16) = (0x258Au16,0x0036u16);
 const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
-const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16);
+// const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16); // this mouse was weird and sent data as i16
+                                                  // instead of i8 so ill probably have to like u
+                                                  // know do something about that
 
 fn main() {
-
     let (send, receive) = mpsc::channel();
 
     // open connected usb mouse devices
     let api = hidapi::HidApi::new().unwrap();
 
-    let left = api.open(TOMAS.0, TOMAS.1);
+    let left = api.open(KT_MOUSE.0, KT_MOUSE.1);
     start_mouse_thread(left, send.clone());
 
     let right = api.open(HP_MOUSE.0, HP_MOUSE.1);
     start_mouse_thread(right, send.clone());
+
+    loop {
+        let res = receive.recv().unwrap();
+        println!("res: {:?}", res);
+
+    }
 }
 
 fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<(i8, i8)>) {
@@ -41,7 +48,6 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
     });
 
 
-
 }
 
 /// grab change in position from mouse
@@ -50,5 +56,11 @@ fn poll_device(device: &hidapi::HidDevice) -> (i8, i8) {
     device.read(&mut buf[..]).unwrap();
 
     (*buf.get(1).unwrap() as i8, *buf.get(2).unwrap() as i8)
+}
+
+// never thought id write this in code
+enum Foot {
+    LEFT,
+    RIGHT,
 }
 
