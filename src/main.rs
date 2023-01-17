@@ -2,6 +2,9 @@ use hidapi;
 use std::sync::mpsc;
 use std::thread;
 
+use std::io::prelude::*;
+use std::net::TcpStream;
+
 // this is all my mouseys
 //🐁🐁🐁🐁🐁
 
@@ -11,7 +14,6 @@ const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
 // const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16); // this mouse was weird and sent data as i16
                                                   // instead of i8 so ill probably have to like u
                                                   // know do something about that
-
 fn main() {
     let (send, receive) = mpsc::channel();
 
@@ -24,15 +26,21 @@ fn main() {
     let right = api.open(HP_MOUSE.0, HP_MOUSE.1);
     start_mouse_thread(right, send.clone(), Foot::RIGHT);
 
+    let mut stream = TcpStream::connect("127.0.0.1:1300").unwrap(); // eh ill do something more
+                                                                    // secret for this ip stuff
+                                                                    // later
+
     loop {
         let res = receive.recv().unwrap();
         println!("res: {:?}", res);
 
+        let buf: [u8; 3] = [0u8; 3];
+
+        stream.write(&buf).expect("stream write fail roflsauce");
     }
 }
 
 fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<MouseData>, foot: Foot) {
-
     // early return if mouse connecting messed up
     if !device_result.is_ok() {
         eprintln!("failed to connect to mouse");
