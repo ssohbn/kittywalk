@@ -14,26 +14,27 @@ use clap::Parser;
 
 //const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
 //const MODEL_O: (u16, u16) = (0x258Au16,0x0036u16);
-const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
-const MS_MOUSE: (u16, u16) = (0x045Eu16, 0x0040u16);
+//const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
+//const MS_MOUSE: (u16, u16) = (0x045Eu16, 0x0040u16);
 // const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16); // this mouse was weird and sent data as i16
                                                   // instead of i8 so ill probably have to like u
                                                   // know do something about that
 fn main() {
 
     let args = Args::parse();
-    let left_mouse = (args.left_mouse.get(0).expect("couldnt get vid of left mouse"), args.left_mouse.get(1).expect("couldnt get pid of left mouse"));
-    let right_mouse = (args.right_mouse.get(0).expect("couldnt get vid of right mouse"), args.right_mouse.get(1).expect("couldnt get pid of right mouse"));
 
+    let left_mouse = parse_mouse_string(args.left_mouse);
+    let right_mouse = parse_mouse_string(args.right_mouse);
 
     let (send, receive) = mpsc::channel();
 
     // open connected usb mouse devices
     let api = hidapi::HidApi::new().unwrap();
 
-    let left = api.open(*left_mouse.0, *left_mouse.1);
+    let left = api.open(left_mouse.0, left_mouse.1);
     start_mouse_thread(left, send.clone(), Foot::LEFT);
-    let right = api.open(*right_mouse.0, *right_mouse.1);
+
+    let right = api.open(right_mouse.0, right_mouse.1);
     start_mouse_thread(right, send.clone(), Foot::RIGHT);
 
     let mut stream = TcpStream::connect(args.ip).expect("couldnt connect to ip thing"); // eh ill do something more
@@ -110,17 +111,22 @@ unsafe impl bytemuck::Zeroable for MouseData {}
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// "ip:port" to send data to
-    #[arg(short, long, required = true)]
+    #[arg(short='i', long, required = true)]
     ip: String,
 
     /// vid:pid of left mouse. find with lsusb or something
-    #[arg(short, long, required = true)]
-    left_mouse: Vec<u16>,
+    #[arg(short='l', long, required = true)]
+    left_mouse: String,
 
     /// vid:pid of right mouse. find with lsusb or something
-    #[arg(short, long, required = true)]
-    right_mouse: Vec<u16>,
+    #[arg(short='r', long, required = true)]
+    right_mouse: String,
 }
 
-
-
+// theres probably a way to automate calling this after clap takes the argument
+fn parse_mouse_string(mouse_info: String) -> (u16, u16) {
+    let mut split = mouse_info.split(":");
+    let (vid, pid) = (split.next(), split.next());
+    let (vid, pid) = (u16::from_str_radix(vid.to_owned().unwrap(), 16).unwrap(), u16::from_str_radix(pid.to_owned().unwrap(), 16).unwrap());
+    (vid, pid)
+}
