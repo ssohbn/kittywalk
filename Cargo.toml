@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.12.3"
+clap = { version = "4.1.1", features = ["derive"] }
 hidapi = {version = "2.1.1", features = ["linux-static-libusb"], default-features = false}
 # rusb = "0.9"

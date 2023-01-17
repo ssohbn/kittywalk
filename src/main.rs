@@ -7,6 +7,8 @@ use std::net::TcpStream;
 
 use bytemuck;
 
+use clap::Parser;
+
 // this is all my mouseys
 //🐁🐁🐁🐁🐁
 
@@ -18,18 +20,23 @@ const MS_MOUSE: (u16, u16) = (0x045Eu16, 0x0040u16);
                                                   // instead of i8 so ill probably have to like u
                                                   // know do something about that
 fn main() {
+
+    let args = Args::parse();
+    let left_mouse = (args.left_mouse.get(0).expect("couldnt get vid of left mouse"), args.left_mouse.get(1).expect("couldnt get pid of left mouse"));
+    let right_mouse = (args.right_mouse.get(0).expect("couldnt get vid of right mouse"), args.right_mouse.get(1).expect("couldnt get pid of right mouse"));
+
+
     let (send, receive) = mpsc::channel();
 
     // open connected usb mouse devices
     let api = hidapi::HidApi::new().unwrap();
 
-    let left = api.open(MS_MOUSE.0, MS_MOUSE.1);
+    let left = api.open(*left_mouse.0, *left_mouse.1);
     start_mouse_thread(left, send.clone(), Foot::LEFT);
-
-    let right = api.open(HP_MOUSE.0, HP_MOUSE.1);
+    let right = api.open(*right_mouse.0, *right_mouse.1);
     start_mouse_thread(right, send.clone(), Foot::RIGHT);
 
-    let mut stream = TcpStream::connect("127.0.0.1:1300").unwrap(); // eh ill do something more
+    let mut stream = TcpStream::connect(args.ip).expect("couldnt connect to ip thing"); // eh ill do something more
                                                                     // secret for this ip stuff
                                                                     // later
 
@@ -97,4 +104,23 @@ impl MouseData {
 // and it worked in my test program but this might be a headache later :)
 unsafe impl bytemuck::Pod for MouseData {}
 unsafe impl bytemuck::Zeroable for MouseData {}
+
+/// cli args needed for program
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// "ip:port" to send data to
+    #[arg(short, long, required = true)]
+    ip: String,
+
+    /// vid:pid of left mouse. find with lsusb or something
+    #[arg(short, long, required = true)]
+    left_mouse: Vec<u16>,
+
+    /// vid:pid of right mouse. find with lsusb or something
+    #[arg(short, long, required = true)]
+    right_mouse: Vec<u16>,
+}
+
+
 
