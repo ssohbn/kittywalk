@@ -18,10 +18,10 @@ fn main() {
     let api = hidapi::HidApi::new().unwrap();
 
     let left = api.open(KT_MOUSE.0, KT_MOUSE.1);
-    start_mouse_thread(left, send.clone());
+    start_mouse_thread(left, send.clone(), Foot::LEFT);
 
     let right = api.open(HP_MOUSE.0, HP_MOUSE.1);
-    start_mouse_thread(right, send.clone());
+    start_mouse_thread(right, send.clone(), Foot::RIGHT);
 
     loop {
         let res = receive.recv().unwrap();
@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<(i8, i8)>) {
+fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<MouseData>, foot: Foot) {
 
     // early return if mouse connecting messed up
     if !device_result.is_ok() {
@@ -43,7 +43,7 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
     thread::spawn(move || {
         loop {
             let (rdx, rdy) = poll_device(&right);
-            sender.send((rdx, rdy)).expect("rightcould not send data");
+            sender.send(MouseData::new(rdx, rdy, foot)).expect("rightcould not send data");
         }
     });
 
@@ -59,8 +59,25 @@ fn poll_device(device: &hidapi::HidDevice) -> (i8, i8) {
 }
 
 // never thought id write this in code
+#[derive(Debug, Clone, Copy)]
 enum Foot {
     LEFT,
     RIGHT,
 }
 
+#[derive(Debug)]
+struct MouseData {
+    x_movement: i8,
+    y_movement: i8,
+    foot: Foot,
+}
+
+impl MouseData {
+    fn new(x_movement: i8, y_movement: i8, foot: Foot) -> MouseData {
+        MouseData {
+            x_movement,
+            y_movement,
+            foot,
+        }
+    }
+}
