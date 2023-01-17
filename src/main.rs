@@ -39,19 +39,17 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
         return
     }
 
-    let right = device_result.unwrap();
+    let device = device_result.unwrap();
     // left mouse thread
     thread::spawn(move || {
         loop {
-            let (rdx, rdy) = poll_device(&right);
-            sender.send(MouseData::new(rdx, rdy, foot)).expect("rightcould not send data");
+            let (dx, dy) = poll_device(&device);
+            sender.send(MouseData::new(dx, dy, foot)).expect("rightcould not send data");
         }
     });
-
-
 }
 
-/// grab change in position from mouse
+// grab change in position from mouse
 fn poll_device(device: &hidapi::HidDevice) -> (i8, i8) {
     let mut buf = [0u8; 4];
     device.read(&mut buf[..]).unwrap();
@@ -70,7 +68,7 @@ enum Foot {
 struct MouseData {
     x_movement: i8,
     y_movement: i8,
-    foot: Foot,
+    foot: Foot, // yeah i dont think this should be in a normal mouse struct...
 }
 
 impl MouseData {
