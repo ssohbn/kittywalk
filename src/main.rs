@@ -5,6 +5,8 @@ use std::thread;
 use std::io::prelude::*;
 use std::net::TcpStream;
 
+use bytemuck;
+
 // this is all my mouseys
 //🐁🐁🐁🐁🐁
 
@@ -34,9 +36,10 @@ fn main() {
         let res = receive.recv().unwrap();
         println!("res: {:?}", res);
 
-        let buf: [u8; 3] = [0u8; 3];
+        let bytes = bytemuck::bytes_of(&res);
+        println!("{:#?}", bytes);
 
-        stream.write(&buf).expect("stream write fail roflsauce");
+        stream.write(bytes).expect("stream write fail roflsauce");
     }
 }
 
@@ -72,7 +75,7 @@ enum Foot {
     RIGHT,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct MouseData {
     x_movement: i8,
     y_movement: i8,
@@ -88,3 +91,9 @@ impl MouseData {
         }
     }
 }
+
+// completely honest. i do not know what these do. I read the docs and I should be able to do this
+// and it worked in my test program but this might be a headache later :)
+unsafe impl bytemuck::Pod for MouseData {}
+unsafe impl bytemuck::Zeroable for MouseData {}
+
