@@ -10,9 +10,10 @@ use bytemuck;
 // this is all my mouseys
 //🐁🐁🐁🐁🐁
 
-const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
+//const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
 //const MODEL_O: (u16, u16) = (0x258Au16,0x0036u16);
 const HP_MOUSE: (u16, u16) = (0x046du16, 0xc018u16);
+const MS_MOUSE: (u16, u16) = (0x045Eu16, 0x0040u16);
 // const TOMAS: (u16, u16) = (0x258Au16, 0x1007u16); // this mouse was weird and sent data as i16
                                                   // instead of i8 so ill probably have to like u
                                                   // know do something about that
@@ -22,7 +23,7 @@ fn main() {
     // open connected usb mouse devices
     let api = hidapi::HidApi::new().unwrap();
 
-    let left = api.open(KT_MOUSE.0, KT_MOUSE.1);
+    let left = api.open(MS_MOUSE.0, MS_MOUSE.1);
     start_mouse_thread(left, send.clone(), Foot::LEFT);
 
     let right = api.open(HP_MOUSE.0, HP_MOUSE.1);
