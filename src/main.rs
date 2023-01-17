@@ -1,8 +1,9 @@
-use hidapi; 
+use hidapi;
 use std::sync::mpsc;
 use std::thread;
 
-// this is all my mouseys >(._.)<
+// this is all my mouseys
+//🐁🐁🐁🐁🐁
 
 const KT_MOUSE: (u16, u16)  = (0x093au16, 0x2510u16);
 //const MODEL_O: (u16, u16) = (0x258Au16,0x0036u16);
