@@ -37,6 +37,7 @@ fn main() {
     let right = api.open(right_mouse.0, right_mouse.1);
     start_mouse_thread(right, send.clone(), Foot::RIGHT);
 
+    println!("trying to connect to {}", args.ip);
     let mut stream = TcpStream::connect(args.ip).expect("couldnt connect to ip thing"); // eh ill do something more
                                                                     // secret for this ip stuff
                                                                     // later
@@ -64,7 +65,7 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
     thread::spawn(move || {
         loop {
             let (dx, dy) = poll_device(&device);
-            sender.send(MouseData::new(dx, dy, foot)).expect("rightcould not send data");
+            sender.send(MouseData::new(dx, dy, foot)).expect("device not send data");
         }
     });
 }
