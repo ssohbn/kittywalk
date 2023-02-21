@@ -32,10 +32,10 @@ fn main() {
     let api = hidapi::HidApi::new().unwrap();
 
     let left = api.open(left_mouse.0, left_mouse.1);
-    start_mouse_thread(left, send.clone(), Foot::LEFT);
+    start_mouse_thread(left, send.clone(), Foot::LEFT, args.left_mouse_type);
 
     let right = api.open(right_mouse.0, right_mouse.1);
-    start_mouse_thread(right, send.clone(), Foot::RIGHT);
+    start_mouse_thread(right, send.clone(), Foot::RIGHT, args.right_mouse_type);
 
     println!("trying to connect to {}", args.ip);
     let mut stream = TcpStream::connect(args.ip).expect("couldnt connect to ip thing"); // eh ill do something more
@@ -53,7 +53,7 @@ fn main() {
     }
 }
 
-fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<MouseData>, foot: Foot) {
+fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sender: mpsc::Sender<MouseData>, foot: Foot, mousetype: MouseType) {
     // early return if mouse connecting messed up
     if !device_result.is_ok() {
         eprintln!("failed to connect to mouse");
@@ -64,20 +64,32 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
     // left mouse thread
     thread::spawn(move || {
         loop {
-            let (dx, dy) = poll_device(&device);
+            let (dx, dy) = poll_device(&device, mousetype);
             sender.send(MouseData::new(dx, dy, foot)).expect("device not send data");
         }
     });
 }
 
 // grab change in position from mouse
-fn poll_device(device: &hidapi::HidDevice) -> (i16, i16) {
+fn poll_device(device: &hidapi::HidDevice, mousetype: MouseType) -> (i16, i16) {
     let mut buf = [0u8; 7];
     device.read(&mut buf).unwrap();
 
-    let dx = [buf.get(1).unwrap().clone(), buf.get(2).unwrap().clone()];
-    let dy = [buf.get(3).unwrap().clone(), buf.get(4).unwrap().clone()];
-    (i16::from_le_bytes(dx),  i16::from_le_bytes(dy))
+    // so devilishly hacky...
+    let (dx, dy) = match mousetype {
+        MouseType::NormalI8 => {
+            unsafe { (*buf.get_unchecked(1) as i16, *buf.get_unchecked(2) as i16) }
+        },
+        MouseType::NormalI16 => {
+            (i16::from_le_bytes(buf[1..3].try_into().unwrap()), i16::from_le_bytes(buf[3..5].try_into().unwrap()))
+        },
+        MouseType::DeviousI16 => {
+            (i16::from_le_bytes(buf[2..4].try_into().unwrap()), i16::from_le_bytes(buf[4..6].try_into().unwrap()))
+        },
+    };
+
+    (dx, dy)
+
 }
 
 // never thought id write this in code
@@ -87,6 +99,18 @@ enum Foot {
     RIGHT,
 }
 
+/// devious hackfix to specify mouse protocols
+#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+enum MouseType {
+    /// first byte is click, next 2 are movement
+    NormalI8,
+    /// first byte is click, next 4 are movement
+    NormalI16,
+    /// first to bytes are not movement, next 4 are movement
+    DeviousI16,
+}
+
+/// POD struct containing movement and foot
 #[derive(Debug, Copy, Clone)]
 struct MouseData {
     x_movement: i16,
@@ -109,21 +133,27 @@ impl MouseData {
 unsafe impl bytemuck::Pod for MouseData {}
 unsafe impl bytemuck::Zeroable for MouseData {}
 
-/// cli args needed for program
+/// clap commandline args
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// "ip:port" to send data to
-    #[arg(short='i', long, required = true)]
+    #[arg(short, long, required = true)]
     ip: String,
 
     /// vid:pid of left mouse. find with lsusb or something
-    #[arg(short='l', long, required = true)]
+    #[arg(long, required = true)]
     left_mouse: String,
 
+    #[arg(required = true, value_enum, short)]
+    left_mouse_type: MouseType,
+
     /// vid:pid of right mouse. find with lsusb or something
-    #[arg(short='r', long, required = true)]
+    #[arg(long, required = true)]
     right_mouse: String,
+
+    #[arg(required = true, value_enum, short)]
+    right_mouse_type: MouseType,
 }
 
 // theres probably a way to automate calling this after clap takes the argument
