@@ -47,7 +47,7 @@ fn main() {
         println!("res: {:?}", res);
 
         let bytes = bytemuck::bytes_of(&res);
-        println!("{:#?}", bytes);
+        // println!("{:#?}", bytes);
 
         stream.write(bytes).expect("stream write fail roflsauce");
     }
