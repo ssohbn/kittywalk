@@ -71,11 +71,13 @@ fn start_mouse_thread(device_result: hidapi::HidResult<hidapi::HidDevice>, sende
 }
 
 // grab change in position from mouse
-fn poll_device(device: &hidapi::HidDevice) -> (i8, i8) {
-    let mut buf = [0u8; 4];
-    device.read(&mut buf[..]).unwrap();
+fn poll_device(device: &hidapi::HidDevice) -> (i16, i16) {
+    let mut buf = [0u8; 7];
+    device.read(&mut buf).unwrap();
 
-    (*buf.get(1).unwrap() as i8, *buf.get(2).unwrap() as i8)
+    let dx = [buf.get(1).unwrap().clone(), buf.get(2).unwrap().clone()];
+    let dy = [buf.get(3).unwrap().clone(), buf.get(4).unwrap().clone()];
+    (i16::from_le_bytes(dx),  i16::from_le_bytes(dy))
 }
 
 // never thought id write this in code
@@ -87,13 +89,13 @@ enum Foot {
 
 #[derive(Debug, Copy, Clone)]
 struct MouseData {
-    x_movement: i8,
-    y_movement: i8,
+    x_movement: i16,
+    y_movement: i16,
     foot: Foot, // yeah i dont think this should be in a normal mouse struct...
 }
 
 impl MouseData {
-    fn new(x_movement: i8, y_movement: i8, foot: Foot) -> MouseData {
+    fn new(x_movement: i16, y_movement: i16, foot: Foot) -> MouseData {
         MouseData {
             x_movement,
             y_movement,
