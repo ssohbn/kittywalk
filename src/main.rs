@@ -78,7 +78,7 @@ fn poll_device(device: &hidapi::HidDevice, mousetype: MouseType) -> (i16, i16) {
     // so devilishly hacky...
     let (dx, dy) = match mousetype {
         MouseType::NormalI8 => {
-            unsafe { (*buf.get_unchecked(1) as i16, *buf.get_unchecked(2) as i16) }
+            unsafe { (*buf.get_unchecked(1) as i8 as i16, *buf.get_unchecked(2) as i8 as i16) }
         },
         MouseType::NormalI16 => {
             (i16::from_le_bytes(buf[1..3].try_into().unwrap()), i16::from_le_bytes(buf[3..5].try_into().unwrap()))
