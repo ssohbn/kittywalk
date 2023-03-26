@@ -43,11 +43,18 @@ fn main() {
                                                                     // later
 
     loop {
+        println!("----");
         let res = receive.recv().unwrap();
         println!("res: {:?}", res);
 
         let bytes = bytemuck::bytes_of(&res);
-        // println!("{:#?}", bytes);
+        println!("{:#?}", bytes);
+        
+        let x = ((bytes[0] as u32) << 24) | ((bytes[1] as u32) << 16) | ((bytes[3] as u32) << 8) | (bytes[4] as u32);
+        println!("{:#b}", x);
+        println!("----");
+
+
 
         stream.write(bytes).expect("stream write fail roflsauce");
     }
