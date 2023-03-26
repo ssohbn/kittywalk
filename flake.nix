@@ -15,15 +15,44 @@
     };
 
     in pkgs.mkShell {
-      buildInputs = [
-        (pkgs.rust-bin.stable.latest.default.override {
-          targets = [ "arm-unknown-linux-gnueabi" "x86_64-unknown-linux-gnu" ];
-        })
 
-        # need these for hidapi
+      # need these for hidapi and pretty sure i put them in nativeBuildInputs
+
+      nativeBuildInputs = [
         pkgs.libusb1
         pkgs.pkg-config
       ];
+
+      buildInputs = [
+        (pkgs.rust-bin.stable.latest.default.override {
+          targets = [ "x86_64-unknown-linux-gnu" ];
+        })
+      ];
     };
+
+    
+    # for the pi
+    devShells.aarch64-linux.default
+    = let
+    pkgs = import inputs.nixpkgs {
+      system = "aarch64-linux";
+      overlays = [ (import inputs.rust-overlay) ];
+    };
+
+    in pkgs.mkShell {
+
+      # need these for hidapi and pretty sure i put them in nativeBuildInputs
+      nativeBuildInputs = [
+        pkgs.libusb1
+        pkgs.pkg-config
+      ];
+
+      buildInputs = [
+        (pkgs.rust-bin.stable.latest.default.override {
+          targets = [ "arm-unknown-linux-gnueabi"];
+        })
+      ];
+    };
+
   };
 }
