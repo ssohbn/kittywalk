@@ -113,7 +113,7 @@ enum MouseType {
     NormalI8,
     /// first byte is click, next 4 are movement
     NormalI16,
-    /// first to bytes are not movement, next 4 are movement
+    /// first two bytes are not movement, next 4 are movement
     DeviousI16,
 }
 
