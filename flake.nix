@@ -25,6 +25,7 @@
 
       buildInputs = [
         (pkgs.rust-bin.stable.latest.default.override {
+          extensions = [ "rustc" "rust-src" "rust-docs" "rust-std" "cargo" "clippy" "rust-analyzer" ];
           targets = [ "x86_64-unknown-linux-gnu" ];
         })
         pkgs.usbutils
@@ -32,6 +33,7 @@
     };
 
     
+    /*
     # for the pi
     devShells.aarch64-linux.default
     = let
@@ -50,10 +52,11 @@
 
       buildInputs = [
         (pkgs.rust-bin.stable.latest.default.override {
+          extensions = [ "rustc" "rust-src" "rust-docs" "rust-std" "cargo" "clippy" "rust-analyzer" "miri" ];
           targets = [ "arm-unknown-linux-gnueabi"];
         })
       ];
     };
-
+    */
   };
 }

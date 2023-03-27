@@ -1,4 +1,5 @@
 use hidapi;
+use std::fmt::write;
 use std::sync::mpsc;
 use std::thread;
 
@@ -38,25 +39,29 @@ fn main() {
     start_mouse_thread(right, send.clone(), Foot::RIGHT, args.right_mouse_type);
 
     println!("trying to connect to {}", args.ip);
-    let mut stream = TcpStream::connect(args.ip).expect("couldnt connect to ip thing"); // eh ill do something more
-                                                                    // secret for this ip stuff
-                                                                    // later
 
     loop {
-        println!("----");
-        let res = receive.recv().unwrap();
-        println!("res: {:?}", res);
+        if let Ok(mut stream) = TcpStream::connect(args.ip.clone()) {
+            loop {
+                println!("----");
+                let res = receive.recv().unwrap();
+                println!("res: {:?}", res);
 
-        let bytes = bytemuck::bytes_of(&res);
-        println!("{:#?}", bytes);
-        
-        let x = ((bytes[0] as u32) << 24) | ((bytes[1] as u32) << 16) | ((bytes[3] as u32) << 8) | (bytes[4] as u32);
-        println!("{:#b}", x);
-        println!("----");
+                let bytes = bytemuck::bytes_of(&res);
+                println!("{:#?}", bytes);
+                
+                let x = ((bytes[0] as u32) << 24) | ((bytes[1] as u32) << 16) | ((bytes[3] as u32) << 8) | (bytes[4] as u32);
+                println!("{:#b}", x);
+                println!("----");
 
-
-
-        stream.write(bytes).expect("stream write fail roflsauce");
+                if let Err(_) = stream.write(bytes) {
+                break;
+                }
+                // stream.write(bytes).expect("stream write fail roflsauce");
+            };
+        } else {
+            continue;
+        };
     }
 }
 
