@@ -27,6 +27,7 @@
         (pkgs.rust-bin.stable.latest.default.override {
           targets = [ "x86_64-unknown-linux-gnu" ];
         })
+        pkgs.usbutils
       ];
     };
 
